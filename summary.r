@@ -1,10 +1,28 @@
 library(tidyverse)
 
-input = "microstudy-data.csv"
 
 
-loadData = function(inp) {
+run = function() {
+  data = load(input_data)
+  meta = load(input_meta)
+  data = dropDuplicateTimes(data)
+  rs = conditionResponses(data)
+  combo = joinAll(data, rs, meta)
+  save(combo, output)
+}
+
+input_data = "microstudy-data.csv"
+input_meta = "microstudy-meta.csv"
+output = "combined.csv"
+
+
+
+load = function(inp) {
   read.csv(inp)
+}
+
+save = function(combo, output) {
+  write.csv(combo, output, na="")
 }
 
 # rs: vector of responses 1, 2, or NA
@@ -84,5 +102,19 @@ conditionResponses = function(data) {
       GayMicro2SI = si(GayMicro2),
       GayMicro3SI = si(GayMicro3)
     )
+}
+
+
+
+# select(rss, -Time)
+joinAll = function(data, responses, meta) {
+  data2 <- inner_join(data, responses)
+  inner_join(data2, select(meta, -ID, -Condition))
+}
+
+dropDuplicateTimes = function(data) {
+  mutate(data, Seconds = round(Time)) %>%
+    distinct(RESP_ID, Condition, Seconds, .keep_all = TRUE) %>%
+    select(ID, RESP_ID, Time, Seconds, everything())
 }
 
