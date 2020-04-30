@@ -25,12 +25,6 @@ save = function(combo, output) {
   write.csv(combo, output, na="")
 }
 
-# rs: vector of responses 1, 2, or NA
-# single user only, or this doesn't make sense
-# Let's investigate this ourselves!
-# a vector of responses, variable length, for each one
-
-
 
 
 # takes the responses and returns a pattern 1222112
@@ -42,9 +36,7 @@ responsePattern = function(rs) {
 
 # takes the response pattern "", 122, 22, 211211 and produces the summary code
 conditionSummary = function(ps) {
-  s = Reduce(conditionSummaryR, ps, "", accumulate=FALSE)
-  # print(ps, s)
-  s
+   Reduce(conditionSummaryR, ps, "", accumulate=FALSE)
 }
 
 conditionSummaryR = function(con, v) {
@@ -91,7 +83,6 @@ si = function(v) {
 
 # gives you the responses for a given condition for a given user?
 conditionResponses = function(data) {
-  # head(aggregate(MuslimMicro1 ~ RESP_ID, data, c)
   data %>%
     group_by(RESP_ID) %>%
     summarize(
