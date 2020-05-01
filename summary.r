@@ -86,6 +86,7 @@ conditionResponses = function(data) {
   data %>%
     group_by(RESP_ID) %>%
     summarize(
+      Condition = Condition[1],
       MuslimMicro1SI = si(MuslimMicro1),
       MuslimMicro2SI = si(MuslimMicro2),
       MuslimMicro3SI = si(MuslimMicro3),
@@ -93,6 +94,7 @@ conditionResponses = function(data) {
       GayMicro2SI = si(GayMicro2),
       GayMicro3SI = si(GayMicro3)
     )
+    # arrange(Condition, RESP_ID)
 }
 
 
