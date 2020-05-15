@@ -87,16 +87,50 @@ conditionResponses = function(data) {
     group_by(RESP_ID) %>%
     summarize(
       Condition = Condition[1],
-      MuslimMicro1SI = si(MuslimMicro1),
-      MuslimMicro2SI = si(MuslimMicro2),
-      MuslimMicro3SI = si(MuslimMicro3),
       GayMicro1SI = si(GayMicro1),
       GayMicro2SI = si(GayMicro2),
-      GayMicro3SI = si(GayMicro3)
+      GayMicro3SI = si(GayMicro3),
+      MuslimMicro1SI = si(MuslimMicro1),
+      MuslimMicro2SI = si(MuslimMicro2),
+      MuslimMicro3SI = si(MuslimMicro3)
     )
     # arrange(Condition, RESP_ID)
 }
 
+
+# compute the mean of all the fields
+subscale = function(meta, ...) {
+  rowMeans(select(meta, ...), na.rm = TRUE)
+}
+
+
+# S, I, SI, IS, X, _
+
+tally = function(fields, fn) {
+  scores = map(fields, fn)
+  pmap(scores, sum) %>% unlist()
+}
+
+sensitiveScore = Vectorize(function(si) {
+  if (si == "S" | si == "IS") {
+    1
+  }
+  else {
+    0
+  }
+})
+
+insensitiveScore = Vectorize(function(si) {
+  if (si == "I" | si == "SI") {
+    1
+  } else {
+    0
+  }
+})
+
+# sumSensitiveScore = function(sis) {
+#   a = sensitiveScore(sis)
+# }
 
 
 # select(rss, -Time)
@@ -104,6 +138,7 @@ joinAll = function(data, responses, meta) {
   data2 <- inner_join(data, responses)
   inner_join(data2, select(meta, -ID, -Condition))
 }
+
 
 dropDuplicateTimes = function(data) {
   mutate(data, Seconds = round(Time)) %>%

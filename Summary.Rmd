@@ -1,0 +1,103 @@
+---
+title: "Build Summary"
+output: html_notebook
+---
+
+Goal: Create a summary containing all useful data points we would like to analyze
+
+TODO - drop people who hit the same thing all the time
+
+## Load Primary Data
+
+```{r}
+library(tidyverse)
+source("summary.r")
+```
+
+Load the primary data and the metadata
+
+```{r}
+data = read.csv("microstudy-data.csv", stringsAsFactors = FALSE) %>%
+  mutate(Condition = as.factor(Condition))
+meta = read.csv("microstudy-meta.csv", stringsAsFactors = FALSE)
+nrow(data)
+nrow(meta)
+```
+
+Some applicants seem to have held down the keys, resulting in thousands of presses. Remove presses more often than once per second
+
+```{r}
+data_clean = dropDuplicateTimes(data)
+data_clean
+```
+
+## Add response summaries
+
+We add S, I, SI, IS, or X, depending on the response pattern for a given micro condition. 
+
+* S if they hit x one or more times during the condition
+* SI if they hit x 1+ times, then z 1+ times
+* X if they switched back and forth
+
+```{r}
+responses = conditionResponses(data_clean) %>% arrange(Condition, RESP_ID)
+```
+
+
+Add Sensitive and Insenstive Scores
+
+```{r}
+fields = list(responses$GayMicro1SI, responses$GayMicro2SI, responses$GayMicro3SI, responses$MuslimMicro1SI, responses$MuslimMicro2SI, responses$MuslimMicro3SI)
+
+scored = responses %>%
+  mutate(
+    Insensitive = tally(fields, insensitiveScore),
+    Sensitive = tally(fields, sensitiveScore)
+  ) %>%
+  select(RESP_ID, Condition, Insensitive, Sensitive, everything())
+
+scored
+```
+
+## Calculate subscales
+
+Cross doesn't use any reverse coded items. It appears CultConceal doesn't either. 
+
+WARNING: watch out for existing summary columns (CultConceal) when using starts_with
+
+```{r}
+subscales = meta %>%
+  transmute(
+    RESP_ID = RESP_ID,
+    # I don't have enough information to compute most other scores, because some are reverse coded
+    CultConceal = subscale(.,CultConceal1,CultConceal2, CultConceal3, CultConceal4),
+    Cross = subscale(., starts_with("Cross"))
+  )
+subscales
+```
+
+
+
+## Combine all results 
+
+```{r}
+summary = inner_join(scored, subscales, by = "RESP_ID") %>%
+  select(RESP_ID, Condition, CultConceal, Cross, Insensitive, Sensitive, everything())
+summary
+```
+
+```{r}
+write.csv(summary, "summary.csv")
+```
+
+
+
+
+Look for bad data. No, it looks like simply cleaning it to once/second does enough. They DO change their answers. Just don't count the total number of presses.
+
+```{r}
+sample = data %>%
+  filter(RESP_ID == "ES20GRE")
+sample
+```
+
