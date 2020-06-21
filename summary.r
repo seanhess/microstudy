@@ -81,26 +81,24 @@ si = function(v) {
 }
 
 
-# gives you the responses for a given condition for a given user?
 conditionResponses = function(data) {
   data %>%
-    group_by(RESP_ID) %>%
+    group_by(RESP_ID, Condition) %>%
     summarize(
-      Condition = Condition[1],
       GayMicro1SI = si(GayMicro1),
       GayMicro2SI = si(GayMicro2),
       GayMicro3SI = si(GayMicro3),
       MuslimMicro1SI = si(MuslimMicro1),
       MuslimMicro2SI = si(MuslimMicro2),
       MuslimMicro3SI = si(MuslimMicro3)
-    )
+    ) %>% ungroup()
     # arrange(Condition, RESP_ID)
 }
 
 
 # compute the mean of all the fields
 subscale = function(meta, ...) {
-  rowMeans(select(meta, ...), na.rm = TRUE)
+  round(rowMeans(select(meta, ...), na.rm = TRUE), digits=2)
 }
 
 
@@ -110,6 +108,15 @@ tally = function(fields, fn) {
   scores = map(fields, fn)
   pmap(scores, sum) %>% unlist()
 }
+
+blankScore = Vectorize(function(si) {
+  if (si == "") {
+    1
+  }
+  else {
+    0
+  }
+})
 
 sensitiveScore = Vectorize(function(si) {
   if (si == "S" | si == "IS") {

@@ -1,0 +1,71 @@
+---
+title: "Science!"
+output: html_notebook
+---
+
+
+## Main Data
+
+Load the data, analysis of the Sensitive and Insensitive scores
+
+```{r}
+library(tidyverse)
+data = read.csv("summary.csv")
+```
+
+
+Separate the data into groups
+
+```{r}
+muslim = filter(data, Condition == "MUSLIM")
+gay = filter(data, Condition == "Gay - V")
+neutral = filter(data, Condition == "NEUTRAL")
+both = rbind(muslim, gay)
+both
+```
+
+A histogram of insensitve and sensitive scores
+
+```{r}
+barplot(table(both$Insensitive), main="Insensitive Histogram", xlab="Insensitive Score")
+```
+
+```{r}
+barplot(table(both$Sensitive), main="Sensitive Histogram", xlab="Sensitive Score")
+```
+
+
+## Compare Cross Score
+
+
+```{r}
+plot(both$Cross, both$Insensitive)
+```
+
+```{r}
+plot(both$Cross, both$Sensitive)
+```
+
+Correlation Cooefficient of Cross score to Sensitive and Insensitive scores
+
+```{r}
+data.frame(
+  Sensitive   = c(cor(gay$Cross, gay$Sensitive), cor(muslim$Cross, muslim$Sensitive)),
+  Insensitive =  c(cor(gay$Cross, gay$Insensitive), cor(muslim$Cross, muslim$Insensitive)),
+  row.names = c("Gay", "Muslim")
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

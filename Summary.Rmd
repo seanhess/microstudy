@@ -24,12 +24,14 @@ nrow(data)
 nrow(meta)
 ```
 
-Some applicants seem to have held down the keys, resulting in thousands of presses. Remove presses more often than once per second
+Some folks seem to have held down the keys, resulting in thousands of presses. Remove presses more often than once per second
 
 ```{r}
 data_clean = dropDuplicateTimes(data)
 data_clean
 ```
+
+One participant was in both Muslim and Gay conditions for some reason. The data looks ok otherwise. Let's include them twice, with different RESP_IDs?
 
 ## Add response summaries
 
@@ -41,6 +43,7 @@ We add S, I, SI, IS, or X, depending on the response pattern for a given micro c
 
 ```{r}
 responses = conditionResponses(data_clean) %>% arrange(Condition, RESP_ID)
+responses
 ```
 
 
@@ -52,9 +55,10 @@ fields = list(responses$GayMicro1SI, responses$GayMicro2SI, responses$GayMicro3S
 scored = responses %>%
   mutate(
     Insensitive = tally(fields, insensitiveScore),
-    Sensitive = tally(fields, sensitiveScore)
+    Sensitive = tally(fields, sensitiveScore),
+    Blank = 3 - (Insensitive + Sensitive)
   ) %>%
-  select(RESP_ID, Condition, Insensitive, Sensitive, everything())
+  select(RESP_ID, Condition, Insensitive, Sensitive, Blank, everything())
 
 scored
 ```
@@ -70,8 +74,8 @@ subscales = meta %>%
   transmute(
     RESP_ID = RESP_ID,
     # I don't have enough information to compute most other scores, because some are reverse coded
-    CultConceal = subscale(.,CultConceal1,CultConceal2, CultConceal3, CultConceal4),
-    Cross = subscale(., starts_with("Cross"))
+    ScoreCultConceal = subscale(.,CultConceal1,CultConceal2, CultConceal3, CultConceal4),
+    ScoreCross = subscale(., starts_with("Cross"))
   )
 subscales
 ```
@@ -81,9 +85,12 @@ subscales
 ## Combine all results 
 
 ```{r}
-summary = inner_join(scored, subscales, by = "RESP_ID") %>%
-  select(RESP_ID, Condition, CultConceal, Cross, Insensitive, Sensitive, everything())
+summary = scored %>%
+  inner_join(subscales, by = "RESP_ID") %>%
+  select(RESP_ID, Condition, ScoreCross, ScoreCultConceal, Insensitive, Sensitive, everything()) %>%
+  inner_join(select(meta, -ID, -Condition), by = "RESP_ID")
 summary
+
 ```
 
 ```{r}
@@ -99,5 +106,25 @@ Look for bad data. No, it looks like simply cleaning it to once/second does enou
 sample = data %>%
   filter(RESP_ID == "ES20GRE")
 sample
+```
+
+
+Issue: someone has an insensitive score of 4
+
+```{r}
+
+# She has entries for both Gay and Muslim conditions! That messes up the Sensitive / Insensitive score later
+filter(data, RESP_ID == "LB13PUR")
+
+# There's only one of these
+data %>%
+  group_by(RESP_ID, Condition) %>%
+  summarize() %>%
+  group_by(RESP_ID) %>%
+  summarize(n = n()) %>%
+  filter(n > 1)
+
+
+
 ```
 
